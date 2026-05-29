@@ -23,8 +23,8 @@ class TestRenderPageToPng:
         """El PNG debe tener dimensiones proporcionales al tamaño del PDF."""
         doc = fitz.open(str(SAMPLE_PDF))
         page = doc[0]
-        expected_w = round(page.rect.width * 150 / 72)
-        expected_h = round(page.rect.height * 150 / 72)
+        expected_w = round(page.rect.width * 300 / 72)
+        expected_h = round(page.rect.height * 300 / 72)
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "page.png"
             render_page_to_png(page, out)

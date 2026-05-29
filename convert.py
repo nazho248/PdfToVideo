@@ -4,7 +4,7 @@ import argparse
 import tempfile
 from pathlib import Path
 
-DPI = 150  # resolución de render — suficiente para texto nítido en video
+DPI = 300  # resolución de render — calidad de impresión, texto perfectamente nítido
 
 
 def render_page_to_png(page: fitz.Page, output_path: Path) -> None:
