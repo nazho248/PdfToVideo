@@ -1,9 +1,10 @@
 import pytest
+import subprocess
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import fitz
 import tempfile
-from convert import render_page_to_png
+from convert import render_page_to_png, png_to_mp4
 
 SAMPLE_PDF = Path(__file__).parent.parent / "sample.pdf"
 
@@ -31,3 +32,28 @@ class TestRenderPageToPng:
             assert abs(pix.width - expected_w) <= 2
             assert abs(pix.height - expected_h) <= 2
         doc.close()
+
+
+class TestPngToMp4:
+    def test_calls_ffmpeg_with_correct_args(self):
+        with patch("convert.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            png = Path("/tmp/page.png")
+            mp4 = Path("/tmp/page.mp4")
+            png_to_mp4(png, mp4)
+            args = mock_run.call_args[0][0]
+            assert args[0] == "ffmpeg"
+            assert "-loop" in args
+            assert "1" in args
+            assert "-t" in args
+            assert "2" in args
+            assert "-crf" in args
+            assert "18" in args
+            assert str(png) in args
+            assert str(mp4) in args
+
+    def test_raises_on_ffmpeg_failure(self):
+        with patch("convert.subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.CalledProcessError(1, "ffmpeg")
+            with pytest.raises(subprocess.CalledProcessError):
+                png_to_mp4(Path("/tmp/p.png"), Path("/tmp/p.mp4"))

@@ -13,3 +13,19 @@ def render_page_to_png(page: fitz.Page, output_path: Path) -> None:
     mat = fitz.Matrix(scale, scale)
     pix = page.get_pixmap(matrix=mat, alpha=False)
     pix.save(str(output_path))
+
+
+def png_to_mp4(png_path: Path, mp4_path: Path, duration: int = 2) -> None:
+    """Convierte un PNG a un MP4 estático de `duration` segundos."""
+    cmd = [
+        "ffmpeg", "-y",
+        "-loop", "1",
+        "-i", str(png_path),
+        "-t", str(duration),
+        "-c:v", "libx264",
+        "-crf", "18",
+        "-pix_fmt", "yuv420p",
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        str(mp4_path),
+    ]
+    subprocess.run(cmd, check=True, capture_output=True)
