@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import fitz
 import tempfile
-from convert import render_page_to_png, png_to_mp4, concatenate_videos
+from convert import render_page_to_png, png_to_mp4, concatenate_videos, convert_pdf
 
 SAMPLE_PDF = Path(__file__).parent.parent / "sample.pdf"
 
@@ -76,3 +76,29 @@ class TestConcatenateVideos:
     def test_raises_on_empty_list(self):
         with pytest.raises(ValueError, match="No hay videos"):
             concatenate_videos([], Path("/tmp/out.mp4"))
+
+
+class TestConvertPdf:
+    def test_creates_one_mp4_per_page(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp) / "output"
+            convert_pdf(SAMPLE_PDF, out_dir, concat=False)
+            doc = fitz.open(str(SAMPLE_PDF))
+            page_count = doc.page_count
+            doc.close()
+            mp4s = sorted(out_dir.glob("pagina_*.mp4"))
+            assert len(mp4s) == page_count
+            assert mp4s[0].name == "pagina_001.mp4"
+
+    def test_concat_creates_combined_video(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp) / "output"
+            convert_pdf(SAMPLE_PDF, out_dir, concat=True)
+            assert (out_dir / "video_completo.mp4").exists()
+
+    def test_output_dir_created_automatically(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp) / "nuevo" / "output"
+            assert not out_dir.exists()
+            convert_pdf(SAMPLE_PDF, out_dir, concat=False)
+            assert out_dir.exists()
