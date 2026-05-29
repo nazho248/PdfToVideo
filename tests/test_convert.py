@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import fitz
 import tempfile
-from convert import render_page_to_png, png_to_mp4
+from convert import render_page_to_png, png_to_mp4, concatenate_videos
 
 SAMPLE_PDF = Path(__file__).parent.parent / "sample.pdf"
 
@@ -57,3 +57,22 @@ class TestPngToMp4:
             mock_run.side_effect = subprocess.CalledProcessError(1, "ffmpeg")
             with pytest.raises(subprocess.CalledProcessError):
                 png_to_mp4(Path("/tmp/p.png"), Path("/tmp/p.mp4"))
+
+
+class TestConcatenateVideos:
+    def test_calls_ffmpeg_concat(self):
+        mp4s = [Path("/tmp/p1.mp4"), Path("/tmp/p2.mp4"), Path("/tmp/p3.mp4")]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "completo.mp4"
+            with patch("convert.subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
+                concatenate_videos(mp4s, out)
+            args = mock_run.call_args[0][0]
+            assert args[0] == "ffmpeg"
+            assert "-f" in args
+            assert "concat" in args
+            assert str(out) in args
+
+    def test_raises_on_empty_list(self):
+        with pytest.raises(ValueError, match="No hay videos"):
+            concatenate_videos([], Path("/tmp/out.mp4"))
