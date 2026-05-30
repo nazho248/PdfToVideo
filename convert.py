@@ -54,9 +54,9 @@ def concatenate_videos(mp4_paths: list[Path], output_path: Path) -> None:
         concat_list.unlink(missing_ok=True)
 
 
-def convert_pdf(pdf_path: Path, output_dir: Path, concat: bool = False) -> None:
-    """Pipeline completo: PDF -> PNGs -> MP4s (-> video_completo.mp4)."""
-    output_dir.mkdir(parents=True, exist_ok=True)
+def convert_pdf(pdf_path: Path, output_path: Path) -> None:
+    """Convierte un PDF completo en un único MP4 (2 segundos por página)."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     doc = fitz.open(str(pdf_path))
 
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -65,7 +65,7 @@ def convert_pdf(pdf_path: Path, output_dir: Path, concat: bool = False) -> None:
 
         for i, page in enumerate(doc, start=1):
             png_path = tmp / f"page_{i:03d}.png"
-            mp4_path = output_dir / f"pagina_{i:03d}.mp4"
+            mp4_path = tmp / f"page_{i:03d}.mp4"
 
             print(f"  Página {i}/{doc.page_count}: renderizando...")
             render_page_to_png(page, png_path)
@@ -75,27 +75,21 @@ def convert_pdf(pdf_path: Path, output_dir: Path, concat: bool = False) -> None:
 
             mp4_paths.append(mp4_path)
 
-    doc.close()
+        page_count = doc.page_count
+        doc.close()
 
-    if concat:
-        combined = output_dir / "video_completo.mp4"
-        print(f"  Concatenando {len(mp4_paths)} videos...")
-        concatenate_videos(mp4_paths, combined)
-        print(f"  Video completo guardado en: {combined}")
+        print(f"  Uniendo {len(mp4_paths)} páginas en un video...")
+        concatenate_videos(mp4_paths, output_path)
 
-    print(f"\nListo. {len(mp4_paths)} videos en: {output_dir}")
+    print(f"\nListo. Video de {page_count} páginas guardado en: {output_path}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Convierte cada página de un PDF a MP4")
+    parser = argparse.ArgumentParser(description="Convierte un PDF completo en un video MP4")
     parser.add_argument("pdf", type=Path, help="Ruta al archivo PDF")
     parser.add_argument(
-        "--output", "-o", type=Path, default=Path("output"),
-        help="Directorio de salida (default: ./output)"
-    )
-    parser.add_argument(
-        "--concat", action="store_true",
-        help="Genera también un video completo con todas las páginas"
+        "--output", "-o", type=Path, default=Path("output.mp4"),
+        help="Ruta del video de salida (default: ./output.mp4)"
     )
     args = parser.parse_args()
 
@@ -103,8 +97,8 @@ def main() -> None:
         print(f"Error: no se encontró el archivo '{args.pdf}'")
         raise SystemExit(1)
 
-    print(f"Convirtiendo '{args.pdf}' ({args.output})...")
-    convert_pdf(args.pdf, args.output, concat=args.concat)
+    print(f"Convirtiendo '{args.pdf}' -> '{args.output}'...")
+    convert_pdf(args.pdf, args.output)
 
 
 if __name__ == "__main__":

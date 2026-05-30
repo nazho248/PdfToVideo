@@ -79,26 +79,24 @@ class TestConcatenateVideos:
 
 
 class TestConvertPdf:
-    def test_creates_one_mp4_per_page(self):
+    def test_creates_single_video(self):
         with tempfile.TemporaryDirectory() as tmp:
-            out_dir = Path(tmp) / "output"
-            convert_pdf(SAMPLE_PDF, out_dir, concat=False)
-            doc = fitz.open(str(SAMPLE_PDF))
-            page_count = doc.page_count
-            doc.close()
-            mp4s = sorted(out_dir.glob("pagina_*.mp4"))
-            assert len(mp4s) == page_count
-            assert mp4s[0].name == "pagina_001.mp4"
+            out = Path(tmp) / "video.mp4"
+            convert_pdf(SAMPLE_PDF, out)
+            assert out.exists()
+            assert out.stat().st_size > 0
 
-    def test_concat_creates_combined_video(self):
+    def test_no_per_page_files_left_behind(self):
+        """Solo debe quedar el video final, sin MP4s por página."""
         with tempfile.TemporaryDirectory() as tmp:
-            out_dir = Path(tmp) / "output"
-            convert_pdf(SAMPLE_PDF, out_dir, concat=True)
-            assert (out_dir / "video_completo.mp4").exists()
+            out = Path(tmp) / "video.mp4"
+            convert_pdf(SAMPLE_PDF, out)
+            mp4s = sorted(Path(tmp).glob("*.mp4"))
+            assert mp4s == [out]
 
     def test_output_dir_created_automatically(self):
         with tempfile.TemporaryDirectory() as tmp:
-            out_dir = Path(tmp) / "nuevo" / "output"
-            assert not out_dir.exists()
-            convert_pdf(SAMPLE_PDF, out_dir, concat=False)
-            assert out_dir.exists()
+            out = Path(tmp) / "nuevo" / "video.mp4"
+            assert not out.parent.exists()
+            convert_pdf(SAMPLE_PDF, out)
+            assert out.exists()

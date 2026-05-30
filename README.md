@@ -1,6 +1,6 @@
 # PDF to Video
 
-Convierte cada página de un PDF en un video MP4 de 2 segundos. Opcionalmente genera un video completo con todas las páginas en orden.
+Convierte un PDF completo en un único video MP4, mostrando cada página 2 segundos en orden.
 
 ## Requisitos
 
@@ -21,29 +21,20 @@ source .venv/bin/activate
 ## Uso
 
 ```bash
-# Un MP4 por página (output/pagina_001.mp4, pagina_002.mp4, ...)
+# Genera output.mp4 en el directorio actual
 python convert.py documento.pdf
 
-# Un MP4 por página + video completo (output/video_completo.mp4)
-python convert.py documento.pdf --concat
-
-# Carpeta de salida personalizada
-python convert.py documento.pdf -o mi_carpeta --concat
+# Ruta de salida personalizada
+python convert.py documento.pdf -o videos/resultado.mp4
 ```
 
 ## Salida
 
-```
-output/
-├── pagina_001.mp4
-├── pagina_002.mp4
-├── ...
-└── video_completo.mp4   # solo con --concat
-```
+Un único archivo MP4 con todas las páginas del PDF en orden:
 
 - Resolución: nativa del PDF (300 DPI — ~2550×3300px para A4)
 - Formato: MP4 H.264 CRF 18
-- Duración por página: 2 segundos
+- Duración: 2 segundos por página
 
 ## Tests
 
