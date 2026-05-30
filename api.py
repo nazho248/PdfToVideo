@@ -48,3 +48,14 @@ def get_job(job_id: str, x_api_key: str | None = Header(default=None)):
         "output_path": job["output_path"],
         "error": job["error"],
     }
+
+
+def main() -> None:
+    """Arranca el servidor enlazado solo al host configurado (127.0.0.1 por defecto)."""
+    import uvicorn
+
+    uvicorn.run(app, host=config.host, port=config.port)
+
+
+if __name__ == "__main__":
+    main()

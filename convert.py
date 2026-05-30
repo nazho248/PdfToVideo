@@ -36,7 +36,10 @@ def concatenate_videos(mp4_paths: list[Path], output_path: Path) -> None:
     if not mp4_paths:
         raise ValueError("No hay videos para concatenar")
 
-    concat_list = output_path.parent / "_concat_list.txt"
+    # El archivo de lista vive junto a los MP4s de entrada (un dir temporal único
+    # por job), no en el directorio de salida — así dos jobs concurrentes que
+    # compartan carpeta de salida no se pisan la lista.
+    concat_list = mp4_paths[0].parent / "_concat_list.txt"
     lines = "\n".join(f"file '{p.resolve()}'" for p in mp4_paths)
     concat_list.write_text(lines)
 

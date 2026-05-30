@@ -1,3 +1,4 @@
+import logging
 from concurrent.futures import ThreadPoolExecutor, Future
 from pathlib import Path
 
@@ -5,6 +6,8 @@ import httpx
 
 from convert import convert_pdf
 from jobs import JobStore
+
+logger = logging.getLogger(__name__)
 
 
 class Worker:
@@ -50,8 +53,9 @@ class Worker:
         }
         try:
             httpx.post(webhook_url, json=payload, headers={"X-API-Key": self.api_key}, timeout=10)
-        except Exception:  # noqa: BLE001 — un webhook fallido no debe romper el worker
-            pass
+        except Exception as exc:  # noqa: BLE001 — un webhook fallido no debe romper el worker
+            # No reintentamos: Laravel puede consultar GET /jobs/{id} como respaldo.
+            logger.warning("Webhook falló para job %s (%s): %s", job["id"], webhook_url, exc)
 
     def shutdown(self) -> None:
         self.executor.shutdown(wait=False)
