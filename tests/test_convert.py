@@ -100,3 +100,17 @@ class TestConvertPdf:
             assert not out.parent.exists()
             convert_pdf(SAMPLE_PDF, out)
             assert out.exists()
+
+
+class TestProgressCallback:
+    def test_callback_called_per_page(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "video.mp4"
+            convert_pdf(SAMPLE_PDF, out, progress_callback=lambda done, total: calls.append((done, total)))
+        doc = fitz.open(str(SAMPLE_PDF))
+        n = doc.page_count
+        doc.close()
+        assert calls[0] == (1, n)
+        assert calls[-1] == (n, n)
+        assert len(calls) == n

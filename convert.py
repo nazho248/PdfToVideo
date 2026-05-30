@@ -54,10 +54,14 @@ def concatenate_videos(mp4_paths: list[Path], output_path: Path) -> None:
         concat_list.unlink(missing_ok=True)
 
 
-def convert_pdf(pdf_path: Path, output_path: Path) -> None:
-    """Convierte un PDF completo en un único MP4 (2 segundos por página)."""
+def convert_pdf(pdf_path: Path, output_path: Path, progress_callback=None) -> None:
+    """Convierte un PDF completo en un único MP4 (2 segundos por página).
+
+    progress_callback: callable opcional (done: int, total: int) llamado tras cada página.
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     doc = fitz.open(str(pdf_path))
+    total = doc.page_count
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp = Path(tmp_dir)
@@ -67,21 +71,22 @@ def convert_pdf(pdf_path: Path, output_path: Path) -> None:
             png_path = tmp / f"page_{i:03d}.png"
             mp4_path = tmp / f"page_{i:03d}.mp4"
 
-            print(f"  Página {i}/{doc.page_count}: renderizando...")
+            print(f"  Página {i}/{total}: renderizando...")
             render_page_to_png(page, png_path)
 
-            print(f"  Página {i}/{doc.page_count}: convirtiendo a MP4...")
+            print(f"  Página {i}/{total}: convirtiendo a MP4...")
             png_to_mp4(png_path, mp4_path)
 
             mp4_paths.append(mp4_path)
+            if progress_callback is not None:
+                progress_callback(i, total)
 
-        page_count = doc.page_count
         doc.close()
 
         print(f"  Uniendo {len(mp4_paths)} páginas en un video...")
         concatenate_videos(mp4_paths, output_path)
 
-    print(f"\nListo. Video de {page_count} páginas guardado en: {output_path}")
+    print(f"\nListo. Video de {total} páginas guardado en: {output_path}")
 
 
 def main() -> None:
