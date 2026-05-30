@@ -1,40 +1,120 @@
-# PDF to Video
+# PdfToVideo
 
-Convierte un PDF completo en un único video MP4, mostrando cada página 2 segundos en orden.
+Convierte un PDF en un video MP4 donde cada página se muestra durante 2 segundos.
+Sirve para pasar presentaciones, apuntes o documentos a un formato de video que
+luego puedes subir a YouTube, VdoCipher, una plataforma de cursos, etc.
+
+Render a 300 DPI, así que el texto se lee nítido. Se puede usar como script de
+línea de comandos o levantarlo como microservicio HTTP para integrarlo con otra
+app (por ejemplo un backend Laravel).
 
 ## Requisitos
 
-- Python 3.x
-- FFmpeg (`sudo apt install ffmpeg` en Linux / `brew install ffmpeg` en Mac)
+- Python 3.10 o superior
+- FFmpeg instalado en el sistema
+
+En Debian/Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+En macOS:
+
+```bash
+brew install ffmpeg
+```
 
 ## Instalación
 
-```bash
-# Crear entorno virtual e instalar dependencias
-uv venv .venv
-uv pip install pymupdf pytest
+Clona el repo y crea un entorno virtual. Si usas `uv`:
 
-# Activar el entorno
+```bash
+git clone git@github.com:nazho248/PdfToVideo.git
+cd PdfToVideo
+uv venv .venv
 source .venv/bin/activate
+uv pip install -r requirements.txt
 ```
 
-## Uso
+Con `pip` normal funciona igual:
 
 ```bash
-# Genera output.mp4 en el directorio actual
-python convert.py documento.pdf
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-# Ruta de salida personalizada
+## Uso por línea de comandos
+
+Lo más básico, deja el video en `output.mp4`:
+
+```bash
+python convert.py documento.pdf
+```
+
+Indicando dónde guardarlo:
+
+```bash
 python convert.py documento.pdf -o videos/resultado.mp4
 ```
 
-## Salida
+El video sale en H.264 (CRF 18) a la resolución nativa del PDF. Para un A4 eso
+ronda los 2550x3300 px. Un documento de 15 páginas tarda un par de minutos y pesa
+unos pocos MB.
 
-Un único archivo MP4 con todas las páginas del PDF en orden:
+## Microservicio HTTP
 
-- Resolución: nativa del PDF (300 DPI — ~2550×3300px para A4)
-- Formato: MP4 H.264 CRF 18
-- Duración: 2 segundos por página
+Si necesitas convertir desde otra aplicación, el servicio expone una API que
+encola las conversiones y avisa cuando terminan. No recibe el PDF por la red:
+le pasas la ruta del archivo en disco, así que pensado para correr en el mismo
+servidor que la app que lo consume.
+
+Arranque en local:
+
+```bash
+export PDFVIDEO_API_KEY="tu-clave-secreta"
+python api.py
+```
+
+Queda escuchando en `127.0.0.1:8001` (solo localhost) y pide el header
+`X-API-Key` en todas las rutas. La documentación interactiva está en
+`http://127.0.0.1:8001/docs`.
+
+### Endpoints
+
+`POST /jobs` — encola una conversión y responde al instante:
+
+```json
+{
+  "pdf_path": "/ruta/absoluta/documento.pdf",
+  "output_path": "/ruta/absoluta/video.mp4",
+  "webhook_url": "https://tu-app.com/webhook"
+}
+```
+
+Devuelve `{ "job_id": "...", "status": "queued" }`.
+
+`GET /jobs/{job_id}` — consulta el estado (`queued`, `processing`, `done` o
+`failed`) y el progreso por página.
+
+Cuando el job termina, el servicio hace un `POST` al `webhook_url` con el
+resultado. Si no pasas `webhook_url`, simplemente consulta el estado tú mismo.
+
+### Configuración
+
+Se lee de variables de entorno:
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `PDFVIDEO_API_KEY` | — | clave de acceso (obligatoria) |
+| `PDFVIDEO_WORKERS` | `2` | conversiones simultáneas |
+| `PDFVIDEO_DB` | `jobs.db` | ruta del SQLite con el estado de los jobs |
+| `PDFVIDEO_HOST` | `127.0.0.1` | host de escucha |
+| `PDFVIDEO_PORT` | `8001` | puerto |
+
+Para desplegarlo en un servidor (gunicorn + systemd) ver `docs/operaciones.md`.
 
 ## Tests
 
@@ -42,35 +122,16 @@ Un único archivo MP4 con todas las páginas del PDF en orden:
 pytest tests/ -v
 ```
 
-## Microservicio HTTP (para Laravel)
+Algunos tests ejecutan FFmpeg de verdad sobre el PDF de ejemplo, así que la
+suite completa tarda unos minutos.
 
-Expone la conversión como API local asíncrona. Ver diseño completo en
+## Cómo funciona
 
-### Arranque
+El proceso es directo: PyMuPDF renderiza cada página del PDF a una imagen PNG, y
+FFmpeg convierte cada imagen en un clip estático de 2 segundos. Al final esos
+clips se concatenan en un único MP4. Los archivos intermedios se generan en una
+carpeta temporal y se borran solos.
 
-```bash
-export PDFVIDEO_API_KEY="una-clave-larga-y-secreta"
-export PDFVIDEO_WORKERS=2          # conversiones simultáneas (opcional)
-.venv/bin/uvicorn api:app --host 127.0.0.1 --port 8001
-```
+## Licencia
 
-El servicio solo escucha en `127.0.0.1` (no acepta tráfico externo) y exige el
-header `X-API-Key` en todas las rutas.
-
-### Endpoints
-
-- `POST /jobs` → encola una conversión, responde `{job_id, status}` al instante
-- `GET /jobs/{job_id}` → estado actual (`queued`/`processing`/`done`/`failed`)
-- Al terminar, hace `POST` al `webhook_url` indicado con el resultado
-
-### Ejemplo desde Laravel
-
-```php
-$res = Http::withHeaders(['X-API-Key' => config('services.pdfvideo.key')])
-    ->post('http://127.0.0.1:8001/jobs', [
-        'pdf_path'    => storage_path('app/pdfs/doc.pdf'),
-        'output_path' => storage_path('app/videos/doc.mp4'),
-        'webhook_url' => route('video.listo'),
-    ]);
-$jobId = $res->json('job_id');
-```
+MIT
