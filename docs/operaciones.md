@@ -3,8 +3,6 @@
 Guía para correr el microservicio PDF→video en un servidor de producción y
 lista de mejoras de seguridad/robustez pendientes.
 
-Relacionado: diseño completo en
-
 ---
 
 ## 1. Despliegue en servidor con Gunicorn
