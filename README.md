@@ -28,6 +28,9 @@ brew install ffmpeg
 
 ## Instalación
 
+¿Primera vez? Hay una guía paso a paso bien detallada en
+`docs/guia-instalacion.md`.
+
 Clona el repo y crea un entorno virtual. Si usas `uv`:
 
 ```bash
