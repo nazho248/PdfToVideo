@@ -1,7 +1,9 @@
 .venv/
+.env
 __pycache__/
 *.pyc
 *.db
 jobs.db
 output/
 /tmp/
+*:Zone.Identifier

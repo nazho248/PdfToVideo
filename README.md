@@ -74,15 +74,22 @@ encola las conversiones y avisa cuando terminan. No recibe el PDF por la red:
 le pasas la ruta del archivo en disco, así que pensado para correr en el mismo
 servidor que la app que lo consume.
 
-Arranque en local:
+Configura la clave de acceso copiando la plantilla y editándola:
 
 ```bash
-export PDFVIDEO_API_KEY="tu-clave-secreta"
+cp .env.example .env
+# edita .env y pon tu clave en PDFVIDEO_API_KEY
+```
+
+Y arranca:
+
+```bash
 python api.py
 ```
 
-Queda escuchando en `127.0.0.1:8001` (solo localhost) y pide el header
-`X-API-Key` en todas las rutas. La documentación interactiva está en
+El `.env` se carga solo (vía `python-dotenv`), no hace falta exportar nada. Queda
+escuchando en `127.0.0.1:8001` (solo localhost) y pide el header `X-API-Key` en
+todas las rutas. La documentación interactiva está en
 `http://127.0.0.1:8001/docs`.
 
 ### Endpoints

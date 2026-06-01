@@ -147,17 +147,34 @@ Esto solo lo necesitas si otra app (por ejemplo un backend) va a pedir las
 conversiones automáticamente. Si solo querías convertir PDFs a mano, puedes
 ignorar este paso.
 
-### 6.1 Definir la clave de acceso
+### 6.1 Definir la clave de acceso (con un archivo .env)
 
-El servicio exige una clave secreta para que nadie más lo use. Defínela como
-variable de entorno (cámbiala por algo largo y propio):
+El servicio exige una clave secreta para que nadie más lo use. La forma más cómoda
+de configurarla es con un archivo `.env`, igual que en Laravel o Node.
+
+El proyecto trae una plantilla llamada `.env.example`. Cópiala a `.env`:
 
 ```
-$ export PDFVIDEO_API_KEY="mi-clave-super-secreta-123"
+$ cp .env.example .env
 ```
 
-> Esa variable solo dura mientras la terminal esté abierta. Si abres otra
-> terminal, vuelve a exportarla.
+Ahora abre el archivo `.env` con cualquier editor y cambia la clave por una tuya,
+larga y secreta:
+
+```
+PDFVIDEO_API_KEY=mi-clave-super-secreta-123
+PDFVIDEO_WORKERS=2
+```
+
+Guarda y listo. El proyecto lee ese `.env` solo al arrancar — **no tienes que
+hacer ningún `export`**.
+
+> El archivo `.env` está en `.gitignore`, así que tu clave real nunca se sube a
+> GitHub. Lo que sí se comparte es `.env.example` (la plantilla sin secretos).
+>
+> Alternativa: si prefieres no usar `.env`, puedes definir la variable a mano en
+> la terminal con `export PDFVIDEO_API_KEY="mi-clave"`, pero eso solo dura en esa
+> ventana y hay que repetirlo cada vez. El `.env` es más cómodo.
 
 ### 6.2 Arrancar el servicio
 

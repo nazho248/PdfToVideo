@@ -1,6 +1,12 @@
 import os
 from dataclasses import dataclass
 
+from dotenv import load_dotenv
+
+# Carga las variables definidas en un archivo .env (si existe) y las deja
+# disponibles como variables de entorno. Igual que el .env de Laravel/Node.
+load_dotenv()
+
 
 @dataclass
 class Config:
@@ -12,7 +18,7 @@ class Config:
 
 
 def get_config() -> Config:
-    """Lee la configuración desde variables de entorno."""
+    """Lee la configuración desde variables de entorno (incluido el .env)."""
     api_key = os.environ.get("PDFVIDEO_API_KEY")
     if not api_key:
         raise RuntimeError("Falta la variable de entorno PDFVIDEO_API_KEY")
