@@ -1,14 +1,27 @@
+import os
 import fitz
 import subprocess
 import argparse
 import tempfile
 from pathlib import Path
 
-DPI = 300  # resolución de render — calidad de impresión, texto perfectamente nítido
+from dotenv import load_dotenv
+
+# Carga el .env también cuando se usa convert.py por línea de comandos.
+load_dotenv()
+
+# Resolución de render en DPI. Más alto = más resolución y nitidez, pero
+# archivos más pesados. 300 = calidad de impresión (default).
+DPI = int(os.environ.get("PDFVIDEO_DPI", "300"))
+
+# Calidad de compresión del video (CRF de H.264). MÁS BAJO = MEJOR calidad y más
+# peso. Rango útil 0-51: 0 sin pérdida, 18 casi perfecto (default), 23 normal,
+# 28 ya se nota la pérdida.
+CRF = os.environ.get("PDFVIDEO_CRF", "18")
 
 
 def render_page_to_png(page: fitz.Page, output_path: Path) -> None:
-    """Renderiza una página PDF a PNG en DPI configurado."""
+    """Renderiza una página PDF a PNG en el DPI configurado."""
     scale = DPI / 72
     mat = fitz.Matrix(scale, scale)
     pix = page.get_pixmap(matrix=mat, alpha=False)
@@ -23,7 +36,7 @@ def png_to_mp4(png_path: Path, mp4_path: Path, duration: int = 2) -> None:
         "-i", str(png_path),
         "-t", str(duration),
         "-c:v", "libx264",
-        "-crf", "18",
+        "-crf", str(CRF),
         "-pix_fmt", "yuv420p",
         "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
         str(mp4_path),

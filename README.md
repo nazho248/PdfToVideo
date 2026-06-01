@@ -123,8 +123,26 @@ Se lee de variables de entorno:
 | `PDFVIDEO_DB` | `jobs.db` | ruta del SQLite con el estado de los jobs |
 | `PDFVIDEO_HOST` | `127.0.0.1` | host de escucha |
 | `PDFVIDEO_PORT` | `8001` | puerto |
+| `PDFVIDEO_DPI` | `300` | resolución de render; más alto = más nítido y pesado |
+| `PDFVIDEO_CRF` | `18` | compresión H.264; más bajo = mejor calidad y más peso |
+
+Estas variables también aplican al uso por línea de comandos (se leen del `.env`).
 
 Para desplegarlo en un servidor (gunicorn + systemd) ver `docs/operaciones.md`.
+
+### Ajustar la calidad del video
+
+Dos perillas controlan el equilibrio calidad/peso:
+
+- **`PDFVIDEO_DPI`** — la resolución. Cada página se renderiza a `tamaño × DPI/72`
+  píxeles. `150` da archivos ligeros, `300` (default) es calidad de impresión,
+  `600` es muy nítido pero pesado.
+- **`PDFVIDEO_CRF`** — cuánto comprime FFmpeg. Va de 0 a 51, y **más bajo es mejor
+  calidad** (y más peso): `0` sin pérdida, `18` casi perfecto (default), `23`
+  normal, `28` ya se nota.
+
+Si los videos pesan demasiado, sube el CRF (p. ej. `23`) o baja el DPI (p. ej.
+`200`). Si quieres máxima nitidez, baja el CRF y sube el DPI.
 
 ## Tests
 
