@@ -33,12 +33,17 @@ class JobStore:
                     output_path TEXT NOT NULL,
                     webhook_url TEXT,
                     progress TEXT,
+                    page_count INTEGER,
                     error TEXT,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 )
                 """
             )
+            # Migración para bases de datos creadas antes de tener page_count.
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(jobs)").fetchall()]
+            if "page_count" not in cols:
+                conn.execute("ALTER TABLE jobs ADD COLUMN page_count INTEGER")
 
     def create(self, pdf_path: str, output_path: str, webhook_url: str | None) -> str:
         job_id = str(uuid.uuid4())
@@ -51,7 +56,8 @@ class JobStore:
             )
         return job_id
 
-    def update(self, job_id: str, status: str | None = None, progress: str | None = None, error: str | None = None) -> None:
+    def update(self, job_id: str, status: str | None = None, progress: str | None = None,
+               error: str | None = None, page_count: int | None = None) -> None:
         sets = ["updated_at = ?"]
         vals: list = [_now()]
         if status is not None:
@@ -63,6 +69,9 @@ class JobStore:
         if error is not None:
             sets.append("error = ?")
             vals.append(error)
+        if page_count is not None:
+            sets.append("page_count = ?")
+            vals.append(page_count)
         vals.append(job_id)
         with self._lock, self._connect() as conn:
             conn.execute(f"UPDATE jobs SET {', '.join(sets)} WHERE id = ?", vals)

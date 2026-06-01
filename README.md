@@ -107,10 +107,24 @@ todas las rutas. La documentación interactiva está en
 Devuelve `{ "job_id": "...", "status": "queued" }`.
 
 `GET /jobs/{job_id}` — consulta el estado (`queued`, `processing`, `done` o
-`failed`) y el progreso por página.
+`failed`), el progreso por página, y cuando termina, `page_count` (número de
+páginas del video) y `seconds_per_page`.
 
 Cuando el job termina, el servicio hace un `POST` al `webhook_url` con el
-resultado. Si no pasas `webhook_url`, simplemente consulta el estado tú mismo.
+resultado, incluyendo `page_count` y `seconds_per_page`:
+
+```json
+{
+  "job_id": "uuid",
+  "status": "done",
+  "output_path": "/.../doc.mp4",
+  "page_count": 15,
+  "seconds_per_page": 2,
+  "error": null
+}
+```
+
+Si no pasas `webhook_url`, simplemente consulta el estado tú mismo.
 
 ### Configuración
 
@@ -125,6 +139,7 @@ Se lee de variables de entorno:
 | `PDFVIDEO_PORT` | `8001` | puerto |
 | `PDFVIDEO_DPI` | `300` | resolución de render; más alto = más nítido y pesado |
 | `PDFVIDEO_CRF` | `18` | compresión H.264; más bajo = mejor calidad y más peso |
+| `PDFVIDEO_SECONDS_PER_PAGE` | `2` | segundos que dura cada página en el video |
 
 Estas variables también aplican al uso por línea de comandos (se leen del `.env`).
 

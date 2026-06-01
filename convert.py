@@ -19,6 +19,9 @@ DPI = int(os.environ.get("PDFVIDEO_DPI", "300"))
 # 28 ya se nota la pérdida.
 CRF = os.environ.get("PDFVIDEO_CRF", "18")
 
+# Segundos que se muestra cada página en el video.
+SECONDS_PER_PAGE = int(os.environ.get("PDFVIDEO_SECONDS_PER_PAGE", "2"))
+
 
 def render_page_to_png(page: fitz.Page, output_path: Path) -> None:
     """Renderiza una página PDF a PNG en el DPI configurado."""
@@ -28,7 +31,7 @@ def render_page_to_png(page: fitz.Page, output_path: Path) -> None:
     pix.save(str(output_path))
 
 
-def png_to_mp4(png_path: Path, mp4_path: Path, duration: int = 2) -> None:
+def png_to_mp4(png_path: Path, mp4_path: Path, duration: int = SECONDS_PER_PAGE) -> None:
     """Convierte un PNG a un MP4 estático de `duration` segundos."""
     cmd = [
         "ffmpeg", "-y",
@@ -70,10 +73,11 @@ def concatenate_videos(mp4_paths: list[Path], output_path: Path) -> None:
         concat_list.unlink(missing_ok=True)
 
 
-def convert_pdf(pdf_path: Path, output_path: Path, progress_callback=None) -> None:
+def convert_pdf(pdf_path: Path, output_path: Path, progress_callback=None) -> int:
     """Convierte un PDF completo en un único MP4 (2 segundos por página).
 
     progress_callback: callable opcional (done: int, total: int) llamado tras cada página.
+    Devuelve el número de páginas del PDF (= número de páginas del video).
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     doc = fitz.open(str(pdf_path))
@@ -103,6 +107,7 @@ def convert_pdf(pdf_path: Path, output_path: Path, progress_callback=None) -> No
         concatenate_videos(mp4_paths, output_path)
 
     print(f"\nListo. Video de {total} páginas guardado en: {output_path}")
+    return total
 
 
 def main() -> None:

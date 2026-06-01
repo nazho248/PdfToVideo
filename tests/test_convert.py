@@ -82,9 +82,13 @@ class TestConvertPdf:
     def test_creates_single_video(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "video.mp4"
-            convert_pdf(SAMPLE_PDF, out)
+            result = convert_pdf(SAMPLE_PDF, out)
             assert out.exists()
             assert out.stat().st_size > 0
+            # devuelve el número de páginas, que coincide con las del PDF
+            doc = fitz.open(str(SAMPLE_PDF))
+            assert result == doc.page_count
+            doc.close()
 
     def test_no_per_page_files_left_behind(self):
         """Solo debe quedar el video final, sin MP4s por página."""

@@ -4,6 +4,7 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 from config import get_config
+from convert import SECONDS_PER_PAGE
 from jobs import JobStore
 from worker import Worker
 
@@ -45,6 +46,8 @@ def get_job(job_id: str, x_api_key: str | None = Header(default=None)):
         "job_id": job["id"],
         "status": job["status"],
         "progress": job["progress"],
+        "page_count": job["page_count"],
+        "seconds_per_page": SECONDS_PER_PAGE,
         "output_path": job["output_path"],
         "error": job["error"],
     }

@@ -43,6 +43,14 @@ class TestJobStore:
             assert job["status"] == "failed"
             assert job["error"] == "boom"
 
+    def test_update_page_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self._store(tmp)
+            job_id = store.create(pdf_path="/a.pdf", output_path="/a.mp4", webhook_url=None)
+            assert store.get(job_id)["page_count"] is None
+            store.update(job_id, status="done", page_count=15)
+            assert store.get(job_id)["page_count"] == 15
+
     def test_ids_are_unique(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = self._store(tmp)

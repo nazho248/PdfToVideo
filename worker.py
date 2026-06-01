@@ -4,7 +4,7 @@ from pathlib import Path
 
 import httpx
 
-from convert import convert_pdf
+from convert import convert_pdf, SECONDS_PER_PAGE
 from jobs import JobStore
 
 logger = logging.getLogger(__name__)
@@ -34,14 +34,15 @@ class Worker:
             def on_progress(done: int, total: int) -> None:
                 self.store.update(job_id, progress=f"{done}/{total}")
 
-            convert_pdf(Path(job["pdf_path"]), Path(job["output_path"]), progress_callback=on_progress)
-            self.store.update(job_id, status="done")
-            self._notify(job, status="done", output_path=job["output_path"], error=None)
+            page_count = convert_pdf(Path(job["pdf_path"]), Path(job["output_path"]), progress_callback=on_progress)
+            self.store.update(job_id, status="done", page_count=page_count)
+            self._notify(job, status="done", output_path=job["output_path"], error=None, page_count=page_count)
         except Exception as exc:  # noqa: BLE001 — queremos capturar cualquier fallo del job
             self.store.update(job_id, status="failed", error=str(exc))
-            self._notify(job, status="failed", output_path=None, error=str(exc))
+            self._notify(job, status="failed", output_path=None, error=str(exc), page_count=None)
 
-    def _notify(self, job: dict, status: str, output_path: str | None, error: str | None) -> None:
+    def _notify(self, job: dict, status: str, output_path: str | None, error: str | None,
+                page_count: int | None) -> None:
         webhook_url = job.get("webhook_url")
         if not webhook_url:
             return
@@ -49,6 +50,8 @@ class Worker:
             "job_id": job["id"],
             "status": status,
             "output_path": output_path,
+            "page_count": page_count,
+            "seconds_per_page": SECONDS_PER_PAGE,
             "error": error,
         }
         try:
